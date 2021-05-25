@@ -30,15 +30,17 @@ public class ListItemComponent extends BaseAdapter implements ListAdapter {
     private ArrayList<String> list = new ArrayList<String>();
     private ArrayList<Calendar> alarmList = new ArrayList<Calendar>();
     private Context context;
+    private AlarmListener alarmListener;
     static int counter = 0;
 
     TimePickerDialog timePicker;
     DatePickerDialog datePicker;
 
-    public ListItemComponent(ArrayList<String> list, ArrayList<Calendar> alarm_list, Context context) {
+    public ListItemComponent(ArrayList<String> list, ArrayList<Calendar> alarm_list, AlarmListener alarmListener, Context context) {
         this.list = list;
         this.alarmList = alarm_list;
         this.context = context;
+        this.alarmListener = alarmListener;
     }
 
     @Override
@@ -76,6 +78,8 @@ public class ListItemComponent extends BaseAdapter implements ListAdapter {
             @Override
             public void onClick(View v) {
                 list.remove(position);
+                alarmListener.cancelAlarm(context);
+
                 notifyDataSetChanged();
             }
         });
@@ -103,10 +107,12 @@ public class ListItemComponent extends BaseAdapter implements ListAdapter {
                                             public void onTimeSet(TimePicker view, int hour, int minute) {
 
                                                 Calendar alarmInfo = Calendar.getInstance();
-                                                alarmInfo.set(year, monthOfYear, dayOfMonth, hour, minute);
+                                                alarmInfo.set(year, monthOfYear, dayOfMonth, hour, minute, 0);
                                                 alarmList.set(position, alarmInfo);
                                                 list.set(position, dayOfMonth + "/" + monthOfYear + "/" + year + "    " + hour + ":" + minute);
 
+                                                alarmListener.cancelAlarm(context);
+                                                alarmListener.setAlarm(context, alarmInfo.getTimeInMillis() - System.currentTimeMillis());
                                                 //editFile(position);
 
 
@@ -200,5 +206,25 @@ public class ListItemComponent extends BaseAdapter implements ListAdapter {
             outputStreamWriter.close();
         } catch (Exception e) {
         }
+    }
+
+    int getPosition(Calendar alarmTime)
+    {
+        if(alarmList.size() == 0)
+        {
+            return 0;
+        }
+        else
+        {
+            for (int idx = 0; idx < alarmList.size(); idx++)
+            {
+                if (alarmList.get(idx).getTimeInMillis() > alarmTime.getTimeInMillis())
+                {
+                    return idx;
+                }
+            }
+        }
+
+        return 0;
     }
 }

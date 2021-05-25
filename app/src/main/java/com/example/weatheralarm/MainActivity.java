@@ -30,9 +30,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.sql.Time;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 public class MainActivity extends ListActivity implements AdapterView.OnItemClickListener {
 
@@ -44,7 +47,8 @@ public class MainActivity extends ListActivity implements AdapterView.OnItemClic
     int alarmCount = 0;
     TimePickerDialog timePicker;
     DatePickerDialog datePicker;
-    ArrayList<AlarmListener> alarmListenerList = new ArrayList<AlarmListener>();
+    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy    HH:mm", Locale.ENGLISH);
+    //ArrayList<AlarmListener> alarmListenerList = new ArrayList<AlarmListener>();
 
     AlarmListener alarmListener = new AlarmListener();
 
@@ -100,7 +104,7 @@ public class MainActivity extends ListActivity implements AdapterView.OnItemClic
 
         super.onCreate(icicle);
         setContentView(R.layout.activity_main);
-        adapter = new ListItemComponent(listItems, alarmList, this);
+        adapter = new ListItemComponent(listItems, alarmList, alarmListener, this);
 //        adapter = new ArrayAdapter<String>(this,
 //                android.R.layout.simple_list_item_1,
 //                listItems);
@@ -168,18 +172,28 @@ public class MainActivity extends ListActivity implements AdapterView.OnItemClic
                                     public void onTimeSet(TimePicker view, int hour, int minute) {
 
                                         Calendar alarmInfo = Calendar.getInstance();
-                                        alarmInfo.set(year, monthOfYear, dayOfMonth, hour, minute);
-                                        alarmList.add(alarmCount, alarmInfo);
+                                        alarmInfo.set(year, monthOfYear, dayOfMonth, hour, minute, 0);
 
-                                        listItems.add(dayOfMonth + "/" + monthOfYear + "/" + year + "    " + hour + ":" + minute);
+                                        int pos = getPosition(alarmInfo);
+
+                                        alarmList.add(pos, alarmInfo);
+                                        String timeString = "";
+                                        timeString = timeString + (dayOfMonth < 10 ? "0" + dayOfMonth + "/" : dayOfMonth + "/");
+                                        timeString = timeString + (monthOfYear < 10 ? "0" + monthOfYear + "/" : monthOfYear + "/");
+                                        timeString = timeString + year + "    ";
+                                        timeString = timeString + (hour < 10 ? "0" + hour + ":" : hour + ":");
+                                        timeString = timeString + (minute < 10 ? "0" + minute : minute);
+
+                                        listItems.add(pos, timeString);
+                                        //listItems.add(pos, dayOfMonth + "/" + monthOfYear + "/" + year + "    " + hour + ":" + minute);
                                         //SaveFileToInternalStorage(listItems.get(listItems.size() - 1));
 
-                                        AlarmListener al = new AlarmListener();
+                                        //AlarmListener al = new AlarmListener();
                                         alarmListener.setAlarm(MainActivity.this, alarmInfo.getTimeInMillis() - System.currentTimeMillis());
 
                                         System.out.println(alarmInfo.getTimeInMillis() - System.currentTimeMillis());
 
-                                        alarmListenerList.add(al);
+                                        //alarmListenerList.add(al);
 
                                         adapter.notifyDataSetChanged();
                                     }
@@ -206,7 +220,14 @@ public class MainActivity extends ListActivity implements AdapterView.OnItemClic
 
                 while ( (receiveString = bufferedReader.readLine()) != null ) {
                     listItems.add(receiveString);
+                    Calendar c = Calendar.getInstance();
+                    c.setTime(sdf.parse(receiveString));
+                    alarmList.add(c);
+
+                    System.out.println("ziua " + c.getTimeInMillis());
                 }
+
+                System.out.println("nr iteme in lista " + alarmList.size());
 
                 inputStream.close();
                 ret = stringBuilder.toString();
@@ -216,6 +237,8 @@ public class MainActivity extends ListActivity implements AdapterView.OnItemClic
             Log.e("login activity", "File not found: " + e.toString());
         } catch (IOException e) {
             Log.e("login activity", "Can not read file: " + e.toString());
+        } catch (ParseException e) {
+            e.printStackTrace();
         }
     }
 
@@ -226,5 +249,26 @@ public class MainActivity extends ListActivity implements AdapterView.OnItemClic
             outputStreamWriter.close();
         } catch (Exception e) {
         }
+    }
+
+    int getPosition(Calendar alarmTime)
+    {
+        if(alarmList.size() == 0)
+        {
+            return 0;
+        }
+        else
+        {
+            for (int idx = 0; idx < alarmList.size(); idx++)
+            {
+                if (alarmTime.getTimeInMillis() < alarmList.get(idx).getTimeInMillis())
+                {
+                    System.out.println("index " + idx);
+                    return idx;
+                }
+            }
+        }
+
+        return 0;
     }
 }

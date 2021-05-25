@@ -158,8 +158,6 @@ public class AlarmListener extends BroadcastReceiver {
         JSONObject jsonObject = jsonArray.getJSONObject(0);
         String generalWeather = jsonObject.getString("description");
 
-        System.out.println("Cum e vremea coaie? Raspuns: " + generalWeather);
-
         setSt(generalWeather);
     }
 
